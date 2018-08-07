@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <script src="file:///android_asset/js/d3.v4.min.js"></script>
+    <!-- <script src="https://d3js.org/d3.v4.min.js"></script> -->
+</head>
+<svg width="300" height="300"></svg>
+<script>
+
+var datam;
+var aNest;
+
+var lol = function(data)
+{
+    console.log(data);
+
+	var dsv = d3.dsvFormat(',')
+	data = dsv.parse(data)
+	var svg = d3.select("svg"),
+    width = +svg.attr("width"),
+    height = +svg.attr("height"),
+    radius = Math.min(width, height) / 2,
+    g = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+    console.log(JSON.stringify(data));
+    aNest = d3.nest().key(function(d){return d.action;})
+                                        .rollup(function(v) { return {count: v.length};})
+                                        .entries(data);
+    console.log("aNest:"+ JSON.stringify(aNest));
+
+    aNest = aNest.map(function(d){return {action:d.key,count:d.value.count};})
+	var color = d3.scaleOrdinal(["#990099", "#FF9900", "#DC3912"]);
+
+	var pie = d3.pie()
+	    .sort(null)
+	    .value(function(d) { return d.count; });
+
+	var path = d3.arc()
+	    .outerRadius(radius - 10)
+	    .innerRadius(0);
+	var label = d3.arc()
+    .outerRadius(radius - 40)
+    .innerRadius(radius - 40);
+    console.log(Object.keys(aNest[0]));
+    console.log(Object.values(aNest[0]));
+	var arc = g.selectAll(".arc")
+						.data(pie(aNest))
+						.enter().append("g")
+						  .attr("class", "arc");
+	arc.append("path")
+	    .attr("d", path)
+	    .attr("fill", function(d) { return color(d.data.action); });
+
+	arc.append("text")
+      .attr("transform", function(d) { return "translate(" + label.centroid(d) + ")"; })
+      .attr("dy", "0.35em")
+      .text(function(d) { return d.data.action; });
+}
+
+
+
+// Change this just call the function from Android side
+// d3.text('dataPomodoro_02.csv', function(error, raw){
+// 	lol(raw);
+// })
+
+
+
+</script>
+</html>

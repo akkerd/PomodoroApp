@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_notification"
+        android:icon="@drawable/ic_info_outline_black_58dp"
+        />
+    <item
+        android:id="@+id/nav_work"
+        android:icon="@drawable/ic_access_alarm_black_58dp"
+        />
+    <item
+        android:id="@+id/nav_stats"
+        android:icon="@drawable/ic_assessment_black_58dp"
+        />
+</menu>

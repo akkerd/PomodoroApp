@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.progress-meter text {
+    font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+}
+</style>
+
+<div id="content0" style="background-color: #FFFFFF"></div>
+<div id="content1" style="background-color: #FFFFFF"></div>
+<div id="content2" style="background-color: #FFFFFF"></div>
+
+<script src="file:///android_asset/js/d3.v4.min.js"></script>
+
+<!-- <script src="https://d3js.org/d3.v4.min.js"></script> -->
+<script>
+
+var myData;
+var nestedData;
+
+
+var mainFunction = function(data)
+{
+    var dsv = d3.dsvFormat(',')
+    data = dsv.parse(data)
+    var parseDate = d3.timeParse("%d-%m-%Y");
+    var parseHour = d3.timeParse("%H:%M")
+    data = data.map(function(d){return { location:d["location"], action:d["action"], isAccomplished:+d["isAccomplished"],
+   totalDuration: +d["totalDuration"], expectedDuration:+d["expectedDuration"], actualDuration: +d["actualDuration"], startDate: parseDate(d["startDate"]),
+    startHour:parseHour(d["startHour"]),endDate: parseDate(d["endDate"]), endHour: parseHour(d["endHour"]), todayGoal: d["todayGoal"],
+  dumbCounter:d["dumbCounter"]};});
+    myData = data;
+
+    nestedData = d3.nest().key(function(d){return d.location})
+											.rollup(function(v) {return {sumActual: parseFloat(d3.sum(v, function(d){return d["actualDuration"];})), sumTotal: d3.sum(v, function(d){return d["totalDuration"];})};})
+											.entries(data);
+
+
+    var indexer;
+    var divNameDefault = "div#content";
+    var ratio;
+    for(indexer = 0; indexer<nestedData.length; indexer++)
+    {
+        ratio = nestedData[indexer].value.sumActual / nestedData[indexer].value.sumTotal;
+        nestedData[indexer].value.sumTotal;
+        createViz('div#content'+indexer,nestedData[indexer].key,ratio, nestedData[indexer].value.sumTotal);
+    }
+
+
+
+}
+
+var createViz = function(divId, locationString, endPercent, totalDuration)
+{
+  var colors = {
+      'green': '#00CC00',
+      'yellow': '#FF9900',
+        'red': '#DC3912'
+  };
+
+  var color = colors.pink;
+
+  if(endPercent>0.75)
+  {
+    color = colors.green;
+  }
+  else if (endPercent<0.50)
+  {
+    color = colors.red;
+  }
+  else {
+    color = colors.yellow;
+  }
+
+
+  var radius = 100;
+  var border = 9;
+  var padding = 30;
+  var startPercent = 0;
+
+
+  var twoPi = Math.PI * 2;
+  var formatPercent = d3.format('.0%');
+  var boxSize = (radius + padding) * 2;
+
+
+  var count = Math.abs((endPercent - startPercent) / 0.01);
+  var step = endPercent < startPercent ? -0.01 : 0.01;
+
+  var arc = d3.arc()
+      .startAngle(0)
+      .innerRadius(radius)
+      .outerRadius(radius - border);
+
+  var parent = d3.select(divId);
+
+  var svg = parent.append('svg')
+      .attr('width', boxSize)
+      .attr('height', boxSize);
+
+  var defs = svg.append('defs');
+
+  var filter = defs.append('filter')
+      .attr('id', 'blur');
+
+  filter.append('feGaussianBlur')
+      .attr('in', 'SourceGraphic')
+      .attr('stdDeviation', '7');
+
+  var g = svg.append('g')
+      .attr('transform', 'translate(' + boxSize / 2 + ',' + boxSize / 2 + ')');
+
+  var meter = g.append('g')
+      .attr('class', 'progress-meter');
+
+  meter.append('path')
+      .attr('class', 'background')
+      .attr('fill', '#ccc')
+      .attr('fill-opacity', 0.5)
+      .attr('d', arc.endAngle(twoPi));
+
+  var foreground = meter.append('path')
+      .attr('class', 'foreground')
+      .attr('fill', color)
+      .attr('fill-opacity', 1)
+      .attr('stroke', color)
+      .attr('stroke-width', 5)
+      .attr('stroke-opacity', 1)
+      .attr('filter', 'url(#blur)');
+
+  var front = meter.append('path')
+      .attr('class', 'foreground')
+      .attr('fill', color)
+      .attr('fill-opacity', 1);
+
+  var numberText = meter.append('text')
+      .attr('fill', '#000')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '.35em');
+  var locationText = meter.append('text')
+      .attr('fill', '#000')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '-2em');
+
+  var hoursText = meter.append('text')
+          .attr('fill', '#000')
+          .attr('text-anchor', 'middle')
+          .attr('dy', '2.1em');
+
+  var ofText = meter.append('text')
+          .attr('fill', '#000')
+          .attr('text-anchor', 'middle')
+          .attr('dy', '1.4em')
+          .style('font-size','18');
+
+  ofText.text("of")
+  var nowHours = Math.floor(totalDuration / 3600);
+  var nowMin  = Math.floor((totalDuration%3600)/60);
+  locationText.text(locationString);
+  hoursText.text(nowHours+'h '+nowMin+'m  ');
+
+  function updateProgress(progress) {
+      foreground.attr('d', arc.endAngle(twoPi * progress));
+      front.attr('d', arc.endAngle(twoPi * progress));
+      numberText.text(formatPercent(progress));
+  }
+
+  var progress = startPercent;
+
+  (function loops() {
+      updateProgress(progress);
+
+      if (count > 0) {
+          count--;
+          progress += step;
+          setTimeout(loops, 1);
+      }
+  })();
+}
+// Change this just call the function from Android side
+// d3.text('dataPomodoro_02.csv', function(error, raw){
+//
+// 	mainFunction(raw);
+//
+// })
+</script>

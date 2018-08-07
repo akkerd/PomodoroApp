@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Pomodoro</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="start_timer">Start timer</string>
+    <string name="set_goals">Set goals</string>
+    <string name="Pause">P</string>
+    <string name="Unpause">U</string>
+    <string name="Next">N</string>
+    <string name="Stop">S</string>
+    <string name="info_1">The Pomodoro Technique can help you power through distractions, hyper-focus, and get things done in short bursts, while taking frequent breaks to come up for air and relax.</string>
+    <string name="info_2">Here is how to get started with Pomodoro, in five steps:\n
+\n
+1. Choose a task to be accomplished.\n
+\n
+2. Divide it in smaller tasks able to be acomplished in a short period of time.\n
+\n
+2. Set the Pomodoro to your selected time in minutes (the classic is 25 minutes).\n
+\n
+3. Work on the task until the Pomodoro rings. Pomodoro will take care of the count for you.\n
+\n
+4. Take a short break (5 minutes is OK, but you can take more depending on how long your sessions are).\n
+\n
+5. Every 4 Pomodoros take a longer break</string>
+    <string-array name="location_array">
+        <item>Library</item>
+        <item>Home</item>
+        <item>DataBar</item>
+    </string-array>
+    <string-array name="task_array">
+        <item>Coding</item>
+        <item>Math</item>
+        <item>Science</item>
+    </string-array>
+</resources>

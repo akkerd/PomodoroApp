@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>D3: Line chart, adjusted</title>
+    <!-- <script src="https://d3js.org/d3.v4.min.js"></script> -->
+    <script src="file:///android_asset/js/d3.v4.min.js"></script>
+
+
+    <style type="text/css">
+		.line {
+			fill: none;
+			stroke-width: 1;
+		}
+
+		.safeLevel {
+			stroke: red;
+			stroke-dasharray: 2, 3;
+		}
+	</style>
+</head>
+
+<body>
+<script type="text/javascript">
+
+
+
+	var mainFunction = function(data)
+	{
+
+		//Width and height
+		var w = 800;
+		var h = 300;
+		var padding = 40;
+
+		var dataset, xScale, yScale, xAxis, yAxis, line; //Empty, for now
+
+		//For converting strings to Dates
+		var parseTime = d3.timeParse("%d-%m-%Y");
+
+		//For converting Dates to strings
+		var formatTime = d3.timeFormat("%d %m");
+
+		//Function for converting CSV values from strings to Dates and numbers
+		var rowConverter = function (d) {
+			return {
+				startDate: parseTime(d.startDate), //Make a new Date object for each year + month
+				location: d["location"],
+				action: d["action"],
+				isAccomplished: +d["isAccomplished"],
+				totalDuration: +d["totalDuration"],
+				expectedDuration: +d["expectedDuration"],
+				actualDuration: +d["actualDuration"],
+				endDate: parseTime(d.endDate),
+				todayGoal: d["todayGoal"],
+				dumbCounter: d["dumbCounter"],
+				//average: parseFloat(d.average)  //Convert from string to float
+			};
+		}
+	    var dsv = d3.dsvFormat(',')
+	    data = dsv.parse(data)
+
+	    dataset = data.map(rowConverter);
+			console.log(dataset);
+
+			// /Print data to console as table, for verification
+			//console.table(dataset);
+
+			// grouping by action, then date, summing by duraton
+			var durationNested = d3.nest()
+				.key(function (d) {
+					return d.action;
+				})
+				.key(function (d) {
+					return d.startDate;
+				})
+				.rollup(function (v) {
+					return d3.sum(v, function (d) {
+						return d.actualDuration;
+					});
+				})
+				.entries(dataset);
+
+			console.log("After conversion: ");
+			console.log(JSON.stringify(durationNested));
+
+			console.log(durationNested);
+			console.log("max is: ");
+
+			let codingData = durationNested[0].values
+			let mathData = durationNested[2].values
+			let scienceData = durationNested[1].values
+
+
+			let yMaxCoding = d3.max(durationNested, d => d3.max(codingData, d => d.value))
+			let yMaxMath = d3.max(durationNested, d => d3.max(mathData, d => d.value))
+			let yMaxScience = d3.max(durationNested, d => d3.max(scienceData, d => d.value))
+
+			let xMaxCoding = d3.max(durationNested, d => d3.max(codingData, d => d.key))
+			let xMinCoding = d3.min(durationNested, d => d3.min(codingData, d => d.key))
+
+			let xMaxMath = d3.max(durationNested, d => d3.max(mathData, d => d.key))
+			let xMinMath = d3.min(durationNested, d => d3.min(mathData, d => d.key))
+
+			let xMaxScience = d3.max(durationNested, d => d3.max(scienceData, d => d.key))
+			let xMinScience = d3.min(durationNested, d => d3.min(scienceData, d => d.key))
+			console.log(xMaxMath, xMinMath)
+
+			let xMin = d3.min([xMinCoding, xMinMath, xMinScience])
+			let xMax = d3.max([xMaxCoding, xMaxMath, xMaxScience])
+			let yMax = d3.max([yMaxCoding, yMaxMath, yMaxScience])
+
+
+			console.log(xMin)
+
+			//Create scale functions
+			xScale = d3.scaleTime()
+				.domain([
+					new Date(xMin),
+					new Date(xMax)
+				])
+				.range([padding, w-padding]);
+
+			yScale = d3.scaleLinear()
+				.domain([0, yMax])
+				.range([h - padding, padding]);
+
+			//Define axes
+			xAxis = d3.axisBottom()
+				.scale(xScale)
+				.ticks(5)
+				.tickFormat(formatTime);
+
+			//Define Y axis
+			yAxis = d3.axisLeft()
+				.scale(yScale)
+				.ticks(10);
+
+			// Define line generator
+			line = d3.line()
+				.x(d => xScale(new Date(d.key)))
+				.y(d => yScale(d.value))
+
+			//Create SVG element
+			var svg = d3.select("body")
+				.append("svg")
+				.attr("width", w)
+				.attr("height", h);
+
+			//Create line
+			svg.append("path")
+				.datum(codingData)
+				.attr("class", "line")
+				.attr("d", line)
+				.attr("stroke", "orange")
+
+			svg.append("path")
+				.datum(mathData)
+				.attr("class", "line")
+				.attr("d", line)
+				.attr("stroke", "green")
+
+			svg.append("path")
+				.datum(scienceData)
+				.attr("class", "line")
+				.attr("d", line)
+				.attr("stroke", "purple")
+
+			// create circles
+			svg.selectAll(".coding")
+				.data(codingData)
+				.enter()
+				.append("circle").attr("class", "coding")
+				.attr("cx", d => xScale(new Date(d.key)))
+				.attr("cy", d => yScale(d.value))
+				.attr("r", 5)
+				.attr("fill", "orange")
+
+			svg.selectAll(".math")
+				.data(mathData)
+				.enter()
+				.append("circle").attr("class", "math")
+				.attr("cx", d => xScale(new Date(d.key)))
+				.attr("cy", d => yScale(d.value))
+				.attr("r", 5)
+				.attr("fill", "green")
+
+			svg.selectAll(".science")
+					.data(scienceData)
+					.enter()
+					.append("circle").attr("class", "science")
+					.attr("cx", d => xScale(new Date(d.key)))
+					.attr("cy", d => yScale(d.value))
+					.attr("r", 5)
+					.attr("fill", "purple")
+
+			//Create axes
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(0," + (h - padding) + ")")
+				.call(xAxis);
+
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + padding + ",0)")
+				.call(yAxis);
+
+
+				svg.append("rect")
+				.attr("x", 100)
+				.attr("y", 10)
+				.attr("width", 60)
+				.attr("height", 20)
+				.attr("fill", "orange");
+
+				svg.append("rect")
+				.attr("x", 100)
+				.attr("y", 35)
+				.attr("width", 60)
+				.attr("height", 20)
+				.attr("fill", "green");
+
+				svg.append("rect")
+				.attr("x", 100)
+				.attr("y", 60)
+				.attr("width", 60)
+				.attr("height", 20)
+				.attr("fill", "purple");
+
+				// text label for the x axis
+  		svg.append("text")
+			.attr("y", 25)
+			.attr("x",105)
+      .text("Math")
+			.style("fill", "white");
+
+			svg.append("text")
+			.attr("y", 50)
+			.attr("x",105)
+      .text("Science")
+			.style("fill", "white");
+
+			svg.append("text")
+			.attr("y", 75)
+			.attr("x",105)
+			.text("Coding")
+			.style("fill", "white");
+
+
+
+	}
+
+		// Change this just call the function from Android side
+		// d3.text('sample.csv', function(error, raw){
+		// 	mainFunction(raw);
+		// })
+
+
+	</script>
+
+</body>
+
+</html>
